@@ -7,6 +7,7 @@ import errno
 
 #---------------------------------------------------------- config read
 with open('config.txt', 'r') as f:
+    deviceId = f.readline().strip()
     ssid = f.readline().strip()
     password = f.readline().strip()
 
@@ -29,6 +30,8 @@ wifi.connect(ssid, password)
 while not wifi.isconnected():
     pass
 
+ip = wifi.ifconfig()[0]
+
 keypad.illuminate(1, 0x1a, 0x97, 0xde)
 keypad.update()
 
@@ -39,14 +42,36 @@ server.bind(('0.0.0.0', 12001))
 server.listen(1)
 server.setblocking(False)
 
+
+#---------------------------------------------------------- broadcast
+
+def broadcast():
+
+    msg = 'archi-keypad-a,' + deviceId
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)  # UDP
+    sock.setsockopt(socket.SOL_SOCKET, 0x20, 1)
+    sock.bind((ip,0))
+    sock.sendto(msg.encode(), ("255.255.255.255", 12000))
+    sock.close()
+
+broadcast()
+
+
+#---------------------------------------------------------- main loop helpers
+
+def initKeypad():
+    keypad.clear()
+    keypad.update()
+
+
 #---------------------------------------------------------- main loop
 
 
 while True:
     try:
         client = server.accept()[0]
-        keypad.clear()
-        keypad.update()
+        initKeypad()
 
         while True:
 
@@ -55,16 +80,24 @@ while True:
                 client.send(str(button_states).encode('utf-8'))
                 client.send(b',')
                 last_button_states = button_states
+                if button_states == 4105:
+                    broadcast()
 
             try:
-                data = client.recv(15)
-                [op, r, g, b] = data.decode('utf-8').split('.')
-                iop = int(op)
-                ir = int(r)
-                ig = int(g)
-                ib = int(b)
-                keypad.illuminate(iop, ir, ig, ib)
-                keypad.update()
+                data = client.recv(15).decode('utf-8')
+
+                if data == '':
+                    break
+
+                else:
+
+                    [op, r, g, b] = data.split('.')
+                    iop = int(op)
+                    ir = int(r)
+                    ig = int(g)
+                    ib = int(b)
+                    keypad.illuminate(iop, ir, ig, ib)
+                    keypad.update()
 
             except OSError as e:
                 err = e.args[0]
@@ -92,5 +125,6 @@ while True:
             time.sleep(0.1)
 
         else:
+            print('error in outer loop')
             print(e)
 
