@@ -50,7 +50,7 @@ def broadcast():
     msg = 'archi-keypad-a,' + deviceId
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)  # UDP
-    sock.setsockopt(socket.SOL_SOCKET, 0x20, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.bind((ip,0))
     sock.sendto(msg.encode(), ("255.255.255.255", 12000))
     sock.close()
