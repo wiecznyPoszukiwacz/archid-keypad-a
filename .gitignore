@@ -1,0 +1,22 @@
+# Ignore device and environment configs
+config.txt
+.env
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Temporary files
+*.tmp
+*~
+*.swp
+*.swo
+
+# Miscellaneous
+.DS_Store
+*.log
